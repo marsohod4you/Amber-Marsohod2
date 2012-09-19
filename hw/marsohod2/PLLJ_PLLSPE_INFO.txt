@@ -1,0 +1,5 @@
+PLL_Name	my_clocks_resets:u_clk_r|my_pll:my_pll_inst|altpll:altpll_component|my_pll_altpll:auto_generated|pll1
+PLLJITTER	29
+PLLSPEmax	84
+PLLSPEmin	-53
+
