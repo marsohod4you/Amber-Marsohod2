@@ -168,7 +168,7 @@ wire    [31:0]         instruction_address;     // instruction virtual address, 
                                                 // the instruction
 wire    [7:0]          instruction_iabt_status; // abort status, follows the instruction
 wire    [1:0]          instruction_sel;
-reg     [3:0]          type;
+reg     [3:0]          itype;
 wire    [3:0]          opcode;
 wire    [7:0]          imm8;
 wire    [31:0]         offset12;
@@ -363,16 +363,16 @@ assign instruction_adex =         instruction_sel == 2'd0 ? adex_reg            
 // Instruction Decode - Order is important!
 always @*
     casez ({instruction[27:20], instruction[7:4]})
-        12'b00010?001001 : type = SWAP;
-        12'b000000??1001 : type = MULT;
-        12'b00?????????? : type = REGOP;
-        12'b01?????????? : type = TRANS;   
-        12'b100????????? : type = MTRANS;  
-        12'b101????????? : type = BRANCH; 
-        12'b110????????? : type = CODTRANS;
-        12'b1110???????0 : type = COREGOP;         
-        12'b1110???????1 : type = CORTRANS;       
-        default:           type = SWI;
+        12'b00010?001001 : itype = SWAP;
+        12'b000000??1001 : itype = MULT;
+        12'b00?????????? : itype = REGOP;
+        12'b01?????????? : itype = TRANS;   
+        12'b100????????? : itype = MTRANS;  
+        12'b101????????? : itype = BRANCH; 
+        12'b110????????? : itype = CODTRANS;
+        12'b1110???????0 : itype = COREGOP;         
+        12'b1110???????1 : itype = CORTRANS;       
+        default:           itype = SWI;
     endcase
 
     
@@ -389,7 +389,7 @@ assign rn_sel_nxt    = branch  ? 4'd15             : // Use PC to calculate bran
                                  instruction[19:16] ;
 
 assign rds_sel_nxt   = control_state == SWAP_WRITE  ? instruction[3:0]   : // Rm gets written out to memory
-                       type == MTRANS               ? mtrans_reg      :
+                       itype == MTRANS               ? mtrans_reg      :
                        branch                       ? 4'd15              : // Update the PC
                        rds_use_rs                   ? instruction[11:8]  : 
                                                       instruction[15:12] ;
@@ -401,12 +401,12 @@ assign offset24      = {{6{instruction[23]}}, instruction[23:0], 2'd0 }; // sign
 assign imm8          = instruction[7:0];
 
 assign immediate_shifter_operand = instruction[25];
-assign rds_use_rs                = (type == REGOP && !instruction[25] && instruction[4]) ||
-                                   (type == MULT && 
+assign rds_use_rs                = (itype == REGOP && !instruction[25] && instruction[4]) ||
+                                   (itype == MULT && 
                                     (control_state == MULT_PROC1  || 
                                      control_state == MULT_PROC2  ||
                                      instruction_valid && !interrupt )) ;
-assign branch                    = type == BRANCH;
+assign branch                    = itype == BRANCH;
 assign opcode_compare =
             opcode == CMP || 
             opcode == CMN || 
@@ -414,22 +414,22 @@ assign opcode_compare =
             opcode == TST ;
             
             
-assign mem_op               = type == TRANS;
+assign mem_op               = itype == TRANS;
 assign load_op              = mem_op && instruction[20];
 assign store_op             = mem_op && !instruction[20];
 assign write_pc             = pc_wen_nxt && pc_sel_nxt != 2'd0;
-assign regop_set_flags      = type == REGOP && instruction[20]; 
+assign regop_set_flags      = itype == REGOP && instruction[20]; 
 
 assign mem_op_pre_indexed   =  instruction[24] && instruction[21];
 assign mem_op_post_indexed  = !instruction[24];
 
 assign imm32_nxt            =  // add 0 to Rm
-                               type == MULT               ? {  32'd0                      } :
+                               itype == MULT               ? {  32'd0                      } :
                                
                                // 4 x number of registers
-                               type == MTRANS             ? {  mtrans_base_reg_change     } :
-                               type == BRANCH             ? {  offset24                   } :
-                               type == TRANS              ? {  offset12                   } :
+                               itype == MTRANS             ? {  mtrans_base_reg_change     } :
+                               itype == BRANCH             ? {  offset24                   } :
+                               itype == TRANS              ? {  offset12                   } :
                                instruction[11:8] == 4'h0  ? {            24'h0, imm8[7:0] } :
                                instruction[11:8] == 4'h1  ? { imm8[1:0], 24'h0, imm8[7:2] } :
                                instruction[11:8] == 4'h2  ? { imm8[3:0], 24'h0, imm8[7:4] } :
@@ -537,15 +537,15 @@ assign mtrans_base_reg_change = {25'd0, mtrans_num_registers, 2'd0};
 
 assign firq_request = firq && !i_execute_status_bits[26];
 assign irq_request  = irq  && !i_execute_status_bits[27];
-assign swi_request  = type == SWI;
+assign swi_request  = itype == SWI;
 assign dabt_request = dabt_reg;
 
 // copro15 and copro13 only supports reg trans opcodes
 // all other opcodes involving co-processors cause an 
 // undefined instrution interrupt
-assign und_request  =   type == CODTRANS || 
-                        type == COREGOP  || 
-                      ( type == CORTRANS && instruction[11:8] != 4'd15 );
+assign und_request  =   itype == CODTRANS || 
+                        itype == COREGOP  || 
+                      ( itype == CORTRANS && instruction[11:8] != 4'd15 );
 
 
   // in order of priority !!                 
@@ -640,7 +640,7 @@ always @*
     
     if ( instruction_valid && !interrupt )
         begin
-        if ( type == REGOP )
+        if ( itype == REGOP )
             begin
             if ( !opcode_compare )
                 begin
@@ -766,7 +766,7 @@ always @*
             if ( store_op )
                 begin
                 write_data_wen_nxt = 1'd1;
-                if ( type == TRANS && instruction[22] )
+                if ( itype == TRANS && instruction[22] )
                     byte_enable_sel_nxt = 2'd1;         // Save byte
                 end
                 
@@ -787,17 +787,17 @@ always @*
             else   
                address_sel_nxt = 4'd1; // alu out
                
-            if ( instruction[25] && type ==  TRANS )
+            if ( instruction[25] && itype ==  TRANS )
                 barrel_shift_data_sel_nxt = 2'd2; // Shift value from Rm register
                 
-            if ( type == TRANS && instruction[25] && shift_imm != 5'd0 ) 
+            if ( itype == TRANS && instruction[25] && shift_imm != 5'd0 ) 
                 begin   
                 barrel_shift_function_nxt   = instruction[6:5];
                 barrel_shift_amount_sel_nxt = 2'd2; // imm_shift_amount
                 end
             end
             
-        if ( type == BRANCH )
+        if ( itype == BRANCH )
             begin
             pc_sel_nxt      = 2'd1; // alu_out
             address_sel_nxt = 4'd1; // alu_out
@@ -810,7 +810,7 @@ always @*
                 end
             end
             
-        if ( type == MTRANS )
+        if ( itype == MTRANS )
             begin
             saved_current_instruction_wen   = 1'd1; // Save the memory access instruction to refer back to later
             pc_wen_nxt                      = 1'd0; // hold current PC value
@@ -865,7 +865,7 @@ always @*
             end
             
             
-        if ( type == MULT )
+        if ( itype == MULT )
             begin
             multiply_function_nxt[0]        = 1'd1; // set enable
                                                     // some bits can be changed just below
@@ -879,7 +879,7 @@ always @*
                        
             
         // swp - do read part first
-        if ( type == SWAP )
+        if ( itype == SWAP )
             begin
             saved_current_instruction_wen   = 1'd1; // Save the memory access instruction to refer back to later
             pc_wen_nxt                      = 1'd0; // hold current PC value
@@ -892,7 +892,7 @@ always @*
 
 
         // mcr & mrc - takes two cycles
-        if ( type == CORTRANS && !und_request )
+        if ( itype == CORTRANS && !und_request )
             begin
             saved_current_instruction_wen   = 1'd1; // Save the memory access instruction to refer back to later
             pc_wen_nxt                      = 1'd0; // hold current PC value
@@ -910,7 +910,7 @@ always @*
             end
 
         
-        if ( type == SWI || und_request )
+        if ( itype == SWI || und_request )
             begin
             // save address of next instruction to Supervisor Mode LR
             reg_write_sel_nxt               = 3'd1;            // pc -4
@@ -1018,7 +1018,7 @@ always @*
             barrel_shift_function_nxt = ROR;
             
         // load a byte            
-        if ( type == TRANS && instruction[22] )
+        if ( itype == TRANS && instruction[22] )
             alu_out_sel_nxt             = 4'd3;  // zero_extend8
             
         if ( !dabt )  // dont load data there is an abort on the data read
@@ -1232,7 +1232,7 @@ always @*
         reg_write_sel_nxt     = 3'd2; // multiply_out
         multiply_function_nxt = o_multiply_function;
         
-        if ( type == MULT ) // 32-bit
+        if ( itype == MULT ) // 32-bit
             reg_bank_wen_nxt      = decode (instruction[19:16]); // Rd
         else  // 64-bit / Long
             reg_bank_wen_nxt      = decode (instruction[15:12]); // RdLo
@@ -1471,7 +1471,7 @@ assign instruction_valid = (control_state == EXECUTE || control_state == PRE_FET
              control_state_nxt = MEM_WAIT1;
         if ( write_pc )     
              control_state_nxt = PC_STALL1;
-        if ( type == MTRANS )
+        if ( itype == MTRANS )
             begin
             if ( mtrans_num_registers != 5'd0 )
                 begin
@@ -1485,13 +1485,13 @@ assign instruction_valid = (control_state == EXECUTE || control_state == PRE_FET
                 control_state_nxt = MTRANS_EXEC3;
             end
 
-        if ( type == MULT )
+        if ( itype == MULT )
                 control_state_nxt = MULT_PROC1;
 
-        if ( type == SWAP )        
+        if ( itype == SWAP )        
                 control_state_nxt = SWAP_WRITE;
 
-        if ( type == CORTRANS && !und_request )        
+        if ( itype == CORTRANS && !und_request )        
                 control_state_nxt = COPRO_WAIT;
                 
          // interrupt overrides everything else so its last       
@@ -1578,7 +1578,7 @@ always @ ( posedge i_clk )
         // to the pre-fetch instruction register
         // then when its decoded, a copy is saved to the saved_current_instruction
         // register
-        if      (type == MTRANS)
+        if      (itype == MTRANS)
             begin           
             saved_current_instruction              <= mtrans_instruction_nxt;
             saved_current_instruction_iabt         <= instruction_iabt;
@@ -1632,7 +1632,7 @@ assign dabt = dabt_reg || i_dabt;
 // Decompiler for debugging core - not synthesizable
 // ========================================================
 //synopsys translate_off
-
+`ifndef ICARUS
 `include "debug_functions.v"
 
 a23_decompile  u_decompile (
@@ -1690,6 +1690,7 @@ always @( posedge i_clk )
         `TB_ERROR_MESSAGE
         $display("Instruction with x's =%08h", instruction);
         end
+`endif
 //synopsys translate_on
 
 endmodule
