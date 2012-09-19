@@ -66,8 +66,13 @@ parameter CACHE_WORDS_PER_LINE = 4,
 parameter WAYS              = `A23_CACHE_WAYS ,
 
 // derived configuration parameters
+`ifdef ICARUS
+parameter CACHE_ADDR_WIDTH  = 8,				// = 8
+parameter WORD_SEL_WIDTH    = 2,				// = 2
+`else
 parameter CACHE_ADDR_WIDTH  = log2 ( CACHE_LINES ),                        // = 8
 parameter WORD_SEL_WIDTH    = log2 ( CACHE_WORDS_PER_LINE ),               // = 2
+`endif
 parameter TAG_ADDR_WIDTH    = 32 - CACHE_ADDR_WIDTH - WORD_SEL_WIDTH - 2,  // = 20
 parameter TAG_WIDTH         = TAG_ADDR_WIDTH + 1,                          // = 21, including Valid flag
 parameter CACHE_LINE_WIDTH  = CACHE_WORDS_PER_LINE * 32,                   // = 128
@@ -522,7 +527,11 @@ generate
         `endif
 
         `ifndef XILINX_FPGA
-        generic_sram_line_en 
+				`ifdef MARSOHOD2
+					my_sram_256_21_line_en
+				`else
+					generic_sram_line_en
+				`endif
         `endif
 
             #(
@@ -548,7 +557,11 @@ generate
         `endif
 
         `ifndef XILINX_FPGA
-        generic_sram_byte_en
+				`ifdef MARSOHOD2
+					my_sram_256_128_byte_en
+				`else
+					generic_sram_byte_en
+				`endif
         `endif
 
             #(
