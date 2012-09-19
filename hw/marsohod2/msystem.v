@@ -41,16 +41,10 @@
 //////////////////////////////////////////////////////////////////
 
 
-module system  
+module msystem  
 (
-input                       brd_rst,
-input                       brd_clk_n,  
+input                       brd_n_rst,
 input                       brd_clk_p,  
-
-`ifdef XILINX_VIRTEX6_FPGA  
-input                       sys_clk_p,
-input                       sys_clk_n,
-`endif
 
 // UART 0 Interface
 input                       i_uart0_rts,
@@ -58,30 +52,7 @@ output                      o_uart0_rx,
 output                      o_uart0_cts,
 input                       i_uart0_tx,
 
-// Xilinx Spartan 6 MCB DDR3 Interface
-inout  [15:0]               ddr3_dq,
-output [12:0]               ddr3_addr,
-output [2:0]                ddr3_ba,
-output                      ddr3_ras_n,
-output                      ddr3_cas_n,
-output                      ddr3_we_n,
-output                      ddr3_odt,
-output                      ddr3_reset_n,
-output                      ddr3_cke,
-output [1:0]                ddr3_dm,
-inout  [1:0]                ddr3_dqs_p,
-inout  [1:0]                ddr3_dqs_n,
-output                      ddr3_ck_p,
-output                      ddr3_ck_n,
-`ifdef XILINX_VIRTEX6_FPGA  
-output                      ddr3_cs_n,
-`endif
-`ifdef XILINX_SPARTAN6_FPGA  
-inout                       mcb3_rzq,
-inout                       mcb3_zio,
-`endif
-
-
+`ifdef ETHERNET
 // Ethmac B100 MAC to PHY Interface
 input                       mtx_clk_pad_i,
 output  [3:0]               mtxd_pad_o, 
@@ -96,54 +67,16 @@ input                       mcrs_pad_i,
 inout                       md_pad_io,
 output                      mdc_pad_o,    
 output                      phy_reset_n,
+`endif
 
-output  [3:0]               led
+output  led
 );
 
-
-wire            sys_clk;    // System clock
-wire            sys_rst;    // Active low reset, synchronous to sys_clk
-wire            clk_200;    // 200MHz from board
-
-
-// ======================================
-// Xilinx MCB DDR3 Controller connections
-// ======================================
-`ifdef XILINX_SPARTAN6_FPGA  
-wire            c3_p0_cmd_en;
-wire  [2:0]     c3_p0_cmd_instr;
-wire  [29:0]    c3_p0_cmd_byte_addr;
-wire            c3_p0_wr_en;
-wire  [15:0]    c3_p0_wr_mask;
-wire  [127:0]   c3_p0_wr_data;
-wire  [127:0]   c3_p0_rd_data;
-wire            c3_p0_rd_empty;
-wire            c3_p0_cmd_full;
-wire            c3_p0_wr_full;
-`endif
+wire brb_rst; assign brd_rst = ~brd_n_rst;
+assign led = brd_rst;
 
 wire            phy_init_done;
-wire            test_mem_ctrl;
 wire            system_rdy;
-
-// ======================================
-// Xilinx Virtex-6 DDR3 Controller connections
-// ======================================
-`ifdef XILINX_VIRTEX6_FPGA  
-wire            phy_init_done1;
-wire            xv6_cmd_en;
-wire  [2:0]     xv6_cmd_instr;
-wire  [26:0]    xv6_cmd_byte_addr;
-wire            xv6_cmd_full;       
-wire            xv6_wr_full;
-wire            xv6_wr_en;
-wire            xv6_wr_end;
-wire  [7:0]     xv6_wr_mask;
-wire  [63:0]    xv6_wr_data;
-wire  [63:0]    xv6_rd_data;
-wire            xv6_rd_data_valid;
-wire            xv6_ddr3_clk;
-`endif
 
 // ======================================
 // Ethmac MII
@@ -167,7 +100,6 @@ localparam WB_DWIDTH  = 32;
 localparam WB_SWIDTH  = 4;
 `endif
 
-
 // Wishbone Master Buses
 wire      [31:0]            m_wb_adr      [WB_MASTERS-1:0];
 wire      [WB_SWIDTH-1:0]   m_wb_sel      [WB_MASTERS-1:0];
@@ -178,7 +110,6 @@ wire      [WB_MASTERS-1:0]  m_wb_cyc                      ;
 wire      [WB_MASTERS-1:0]  m_wb_stb                      ;
 wire      [WB_MASTERS-1:0]  m_wb_ack                      ;
 wire      [WB_MASTERS-1:0]  m_wb_err                      ;
-
 
 // Wishbone Slave Buses
 wire      [31:0]            s_wb_adr      [WB_SLAVES-1:0];
@@ -191,6 +122,7 @@ wire      [WB_SLAVES-1:0]   s_wb_stb                     ;
 wire      [WB_SLAVES-1:0]   s_wb_ack                     ;
 wire      [WB_SLAVES-1:0]   s_wb_err                     ;
 
+`ifdef ETHERNET
 wire      [31:0]            emm_wb_adr;  
 wire      [3:0]             emm_wb_sel;  
 wire                        emm_wb_we;   
@@ -210,7 +142,7 @@ wire                        ems_wb_cyc;
 wire                        ems_wb_stb;  
 wire                        ems_wb_ack;  
 wire                        ems_wb_err;  
-
+`endif
 
 // ======================================
 // Interrupts
@@ -224,10 +156,30 @@ wire                        uart0_int;
 wire                        uart1_int;
 wire      [2:0]             timer_int;
 
+wire sys_clk;
+wire sys_rst;
 
 // ======================================
 // Clocks and Resets Module
 // ======================================
+`ifdef MARSOHOD2
+my_clocks_resets u_clk_r(
+	.i_brd_rst(brd_rst),		//from board button
+	.i_brd_clk(brd_clk_p),	//from board crystal
+	.o_sys_rst(sys_rst),		//main project reset made out of board button reset
+	.o_sys_clk(sys_clk),		//main system clock
+	.o_system_ready(system_rdy)
+);
+`else
+`ifdef ICARUS
+my_clocks_resets u_clk_r(
+	.i_brd_rst(brd_rst),		//from board button
+	.i_brd_clk(brd_clk_p),	//from board crystal
+	.o_sys_rst(sys_rst),		//main project reset made out of board button reset
+	.o_sys_clk(sys_clk),		//main system clock
+	.o_system_ready(system_rdy)
+);
+`else
 clocks_resets u_clocks_resets (
     .i_brd_rst          ( brd_rst           ),
     .i_brd_clk_n        ( brd_clk_n         ),  
@@ -237,7 +189,8 @@ clocks_resets u_clocks_resets (
     .o_sys_clk          ( sys_clk           ),
     .o_clk_200          ( clk_200           )
 );
-                
+`endif
+`endif
 
 // -------------------------------------------------------------
 // Instantiate Amber Processor Core
@@ -265,11 +218,10 @@ a23_core u_amber (
     .i_wb_err       ( m_wb_err  [1]   )
 );
 
-
 // -------------------------------------------------------------
 // Instantiate B100 Ethernet MAC
 // -------------------------------------------------------------
-  
+`ifdef ETHERNET  
 eth_top u_eth_top (
     .wb_clk_i                   ( sys_clk                ),
     .wb_rst_i                   ( sys_rst                ),
@@ -315,8 +267,11 @@ eth_top u_eth_top (
     // Interrupt
     .int_o                      ( ethmac_int             )
 );
+`else
+	assign ethmac_int = 0;
+`endif
 
-
+`ifdef ETHERNET
 // -------------------------------------------------------------
 // Instantiate Ethernet Control Interface tri-state buffer
 // -------------------------------------------------------------
@@ -331,12 +286,7 @@ generic_iobuf u_iobuf (
     // T is high for tri-state output
     .T                          ( ~md_padoe_o           ) 
 );
-
-// Ethernet MII PHY reset
-//assign phy_reset_n = !sys_rst;
-
-// Halt core until system is ready
-assign system_rdy = phy_init_done && !sys_rst;
+`endif
 
 // -------------------------------------------------------------
 // Instantiate Boot Memory - 8KBytes of Embedded SRAM
@@ -373,7 +323,6 @@ else begin : boot_mem128
 end
 endgenerate
 
-
 // -------------------------------------------------------------
 // Instantiate UART0
 // -------------------------------------------------------------
@@ -386,9 +335,9 @@ u_uart0 (
 
     .o_uart_int             ( uart0_int      ),
     
-    .i_uart_cts_n           ( i_uart0_rts    ),
+    .i_uart_cts_n           ( 1'b0 ), 	//i_uart0_rts    ),
     .o_uart_txd             ( o_uart0_rx     ),
-    .o_uart_rts_n           ( o_uart0_cts    ),
+    .o_uart_rts_n           ( ),			//o_uart0_cts    ),
     .i_uart_rxd             ( i_uart0_tx     ),
     
     .i_wb_adr               ( s_wb_adr  [3]  ),
@@ -402,7 +351,7 @@ u_uart0 (
     .o_wb_err               ( s_wb_err  [3]  )
 );
 
-
+`ifdef ENABLE_UART1
 // -------------------------------------------------------------
 // Instantiate UART1
 // -------------------------------------------------------------
@@ -432,7 +381,12 @@ u_uart1 (
     .o_wb_ack               ( s_wb_ack  [4]  ),
     .o_wb_err               ( s_wb_err  [4]  )
 );
-
+`else
+    assign uart1_int = 0;
+    assign s_wb_dat_r[4] = 0;
+    assign s_wb_ack  [4] = 0;
+    assign s_wb_err  [4] = 0;
+`endif
 
 // -------------------------------------------------------------
 // Instantiate Test Module
@@ -457,10 +411,9 @@ u_test_module (
     .i_wb_stb               ( s_wb_stb  [5]  ),
     .o_wb_ack               ( s_wb_ack  [5]  ),
     .o_wb_err               ( s_wb_err  [5]  ),
-    .o_led                  ( led            ),
+    .o_led                  ( /*led*/        ),
     .o_phy_rst_n            ( phy_reset_n    )
 );
-
 
 // -------------------------------------------------------------
 // Instantiate Timer Module
@@ -486,7 +439,6 @@ u_timer_module (
     .o_wb_ack               ( s_wb_ack  [6]  ),
     .o_wb_err               ( s_wb_err  [6]  )
 );
-
 
 // -------------------------------------------------------------
 // Instantiate Interrupt Controller Module
@@ -522,16 +474,14 @@ u_interrupt_controller (
     .o_wb_err               ( s_wb_err  [7]  )
 );
 
-
-
-
 `ifndef XILINX_FPGA
     // ======================================
     // Instantiate non-synthesizable main memory model
     // ======================================
     
     assign phy_init_done = 1'd1;
-    
+`ifdef NOMEMORY
+`else
     main_mem #(
                 .WB_DWIDTH             ( WB_DWIDTH             ),
                 .WB_SWIDTH             ( WB_SWIDTH             )
@@ -549,209 +499,8 @@ u_interrupt_controller (
                .o_wb_ack               ( s_wb_ack  [2]         ),        
                .o_wb_err               ( s_wb_err  [2]         )     
             );
-
 `endif
-
-
-`ifdef XILINX_SPARTAN6_FPGA  
-    // -------------------------------------------------------------
-    // Instantiate Wishbone to Xilinx Spartan-6 DDR3 Bridge
-    // -------------------------------------------------------------
-    // The clock crossing fifo for spartan-6 is build into the mcb
-    wb_xs6_ddr3_bridge   #(
-        .WB_DWIDTH              ( WB_DWIDTH             ),
-        .WB_SWIDTH              ( WB_SWIDTH             )
-        )
-    u_wb_xs6_ddr3_bridge(
-        .i_clk                  ( sys_clk               ),
-
-        .o_cmd_en               ( c3_p0_cmd_en          ),        
-        .o_cmd_instr            ( c3_p0_cmd_instr       ),        
-        .o_cmd_byte_addr        ( c3_p0_cmd_byte_addr   ),        
-        .i_cmd_full             ( c3_p0_cmd_full        ),        
-        .i_wr_full              ( c3_p0_wr_full         ),        
-        .o_wr_en                ( c3_p0_wr_en           ),        
-        .o_wr_mask              ( c3_p0_wr_mask         ),        
-        .o_wr_data              ( c3_p0_wr_data         ),        
-        .i_rd_data              ( c3_p0_rd_data         ),        
-        .i_rd_empty             ( c3_p0_rd_empty        ),
-        
-        .i_mem_ctrl             ( test_mem_ctrl         ),
-        .i_wb_adr               ( s_wb_adr  [2]         ),        
-        .i_wb_sel               ( s_wb_sel  [2]         ),        
-        .i_wb_we                ( s_wb_we   [2]         ),        
-        .o_wb_dat               ( s_wb_dat_r[2]         ),        
-        .i_wb_dat               ( s_wb_dat_w[2]         ),        
-        .i_wb_cyc               ( s_wb_cyc  [2]         ),        
-        .i_wb_stb               ( s_wb_stb  [2]         ),        
-        .o_wb_ack               ( s_wb_ack  [2]         ),        
-        .o_wb_err               ( s_wb_err  [2]         )     
-    );
-
-    
-    // -------------------------------------------------------------
-    // Instantiate Xilinx Spartan-6 FPGA MCB-DDR3 Controller
-    // -------------------------------------------------------------
-    mcb_ddr3 u_mcb_ddr3  (
-
-                // DDR3 signals
-               .mcb3_dram_dq            ( ddr3_dq               ),
-               .mcb3_dram_a             ( ddr3_addr             ),
-               .mcb3_dram_ba            ( ddr3_ba               ),
-               .mcb3_dram_ras_n         ( ddr3_ras_n            ),
-               .mcb3_dram_cas_n         ( ddr3_cas_n            ),
-               .mcb3_dram_we_n          ( ddr3_we_n             ),
-               .mcb3_dram_odt           ( ddr3_odt              ),
-               .mcb3_dram_reset_n       ( ddr3_reset_n          ),
-               .mcb3_dram_cke           ( ddr3_cke              ),
-               .mcb3_dram_udm           ( ddr3_dm[1]            ),
-               .mcb3_dram_dm            ( ddr3_dm[0]            ),
-               .mcb3_rzq                ( mcb3_rzq              ),
-               .mcb3_zio                ( mcb3_zio              ),
-               .mcb3_dram_udqs          ( ddr3_dqs_p[1]         ),
-               .mcb3_dram_dqs           ( ddr3_dqs_p[0]         ),
-               .mcb3_dram_udqs_n        ( ddr3_dqs_n[1]         ),
-               .mcb3_dram_dqs_n         ( ddr3_dqs_n[0]         ),
-               .mcb3_dram_ck            ( ddr3_ck_p             ),
-               .mcb3_dram_ck_n          ( ddr3_ck_n             ),
-       
-               .sys_clk_ibufg           ( clk_200               ), 
-               .c3_sys_rst_n            ( brd_rst               ),
-               
-               .c3_calib_done           ( phy_init_done         ),
-               
-               .c3_p0_cmd_clk           ( sys_clk               ),
-               
-               .c3_p0_cmd_en            ( c3_p0_cmd_en          ),
-               .c3_p0_cmd_instr         ( c3_p0_cmd_instr       ),
-               .c3_p0_cmd_bl            ( 6'd0                  ),
-               .c3_p0_cmd_byte_addr     ( c3_p0_cmd_byte_addr   ),
-               .c3_p0_cmd_empty         (                       ),
-               .c3_p0_cmd_full          ( c3_p0_cmd_full        ),
-               
-               .c3_p0_wr_clk            ( sys_clk               ),
-               
-               .c3_p0_wr_en             ( c3_p0_wr_en           ),
-               .c3_p0_wr_mask           ( c3_p0_wr_mask         ),
-               .c3_p0_wr_data           ( c3_p0_wr_data         ),
-               .c3_p0_wr_full           ( c3_p0_wr_full         ),
-               .c3_p0_wr_empty          (                       ),
-               .c3_p0_wr_count          (                       ),
-               .c3_p0_wr_underrun       (                       ),
-               .c3_p0_wr_error          (                       ),
-               
-               .c3_p0_rd_clk            ( sys_clk               ),
-               
-               .c3_p0_rd_en             ( 1'd1                  ),
-               .c3_p0_rd_data           ( c3_p0_rd_data         ),
-               .c3_p0_rd_full           (                       ),
-               .c3_p0_rd_empty          ( c3_p0_rd_empty        ),
-               .c3_p0_rd_count          (                       ),
-               .c3_p0_rd_overflow       (                       ),
-               .c3_p0_rd_error          (                       )
-       );
 `endif
-
-
-`ifdef XILINX_VIRTEX6_FPGA  
-    // -------------------------------------------------------------
-    // Instantiate Wishbone to Xilinx Spartan-6 DDR3 Bridge
-    // -------------------------------------------------------------
-    // The clock crossing fifo for virtex-6 is insode the bridge
-    // module
-    wb_xv6_ddr3_bridge    #(
-        .WB_DWIDTH              ( WB_DWIDTH             ),
-        .WB_SWIDTH              ( WB_SWIDTH             )
-        )
-    u_wb_xv6_ddr3_bridge (
-        .i_sys_clk              ( sys_clk               ),
-        .i_ddr_clk              ( xv6_ddr3_clk          ),
-
-        .o_ddr_cmd_en           ( xv6_cmd_en            ),        
-        .o_ddr_cmd_instr        ( xv6_cmd_instr         ),        
-        .o_ddr_cmd_byte_addr    ( xv6_cmd_byte_addr     ),        
-        .i_ddr_cmd_full         ( xv6_cmd_full          ), 
-               
-        .i_ddr_wr_full          ( xv6_wr_full           ),        
-        .o_ddr_wr_en            ( xv6_wr_en             ),   
-        .o_ddr_wr_end           ( xv6_wr_end            ),
-        .o_ddr_wr_mask          ( xv6_wr_mask           ),        
-        .o_ddr_wr_data          ( xv6_wr_data           ),  
-              
-        .i_ddr_rd_data          ( xv6_rd_data           ),        
-        .i_ddr_rd_valid         ( xv6_rd_data_valid     ),
-        
-        .i_phy_init_done        ( phy_init_done1        ),        
-        .o_phy_init_done        ( phy_init_done         ),  // delayed version
-              
-        .i_mem_ctrl             ( test_mem_ctrl         ),
-        .i_wb_adr               ( s_wb_adr  [2]         ),        
-        .i_wb_sel               ( s_wb_sel  [2]         ),        
-        .i_wb_we                ( s_wb_we   [2]         ),        
-        .o_wb_dat               ( s_wb_dat_r[2]         ),        
-        .i_wb_dat               ( s_wb_dat_w[2]         ),        
-        .i_wb_cyc               ( s_wb_cyc  [2]         ),        
-        .i_wb_stb               ( s_wb_stb  [2]         ),        
-        .o_wb_ack               ( s_wb_ack  [2]         ),        
-        .o_wb_err               ( s_wb_err  [2]         )     
-    );
-
- 
-    // -------------------------------------------------------------
-    // Instantiate Xilinx Virtex-6 FPGA DDR3 Controller
-    // -------------------------------------------------------------
-    xv6_ddr3   
-    #(          // - Skip the memory initilization sequence,
-                .SIM_INIT_OPTION        ("SKIP_PU_DLY"              ), 
-                // - Skip the delay Calibration process
-                .SIM_CAL_OPTION         ("FAST_CAL"                 ),  
-                .RST_ACT_LOW            ( 0                         )
-                )
-    u_xv6_ddr3  (
-                // DDR3 signals
-                .ddr3_dq                ( ddr3_dq                   ),
-                .ddr3_addr              ( ddr3_addr                 ),
-                .ddr3_ba                ( ddr3_ba                   ),
-                .ddr3_ras_n             ( ddr3_ras_n                ),
-                .ddr3_cas_n             ( ddr3_cas_n                ),
-                .ddr3_we_n              ( ddr3_we_n                 ),
-                .ddr3_odt               ( ddr3_odt                  ),
-                .ddr3_reset_n           ( ddr3_reset_n              ),
-                .ddr3_cke               ( ddr3_cke                  ),
-                .ddr3_dm                ( ddr3_dm                   ),
-                .ddr3_dqs_p             ( ddr3_dqs_p                ),
-                .ddr3_dqs_n             ( ddr3_dqs_n                ),
-                .ddr3_ck_p              ( ddr3_ck_p                 ),
-                .ddr3_ck_n              ( ddr3_ck_n                 ),
-                .ddr3_cs_n              ( ddr3_cs_n                 ),
-                
-                // DDR clock
-                .sys_clk_p              ( sys_clk_p                 ),
-                .sys_clk_n              ( sys_clk_n                 ),
-                .clk_ref                ( clk_200                   ),
-                .sys_rst                ( brd_rst                   ),
-                .tb_rst                 (                           ),
-                .tb_clk                 ( xv6_ddr3_clk              ),
-                .phy_init_done          ( phy_init_done1             ),
-               
-                .app_en                 ( xv6_cmd_en                ),
-                .app_cmd                ( xv6_cmd_instr             ),
-                .tg_addr                ( xv6_cmd_byte_addr         ),
-                .app_full               ( xv6_cmd_full              ),
-
-                .app_wdf_wren           ( xv6_wr_en                 ),
-                .app_wdf_mask           ( xv6_wr_mask               ),
-                .app_wdf_data           ( xv6_wr_data               ),
-                .app_wdf_end            ( xv6_wr_end                ),
-                .app_wdf_full           ( xv6_wr_full               ),
-                
-                .app_rd_data            ( xv6_rd_data               ),
-                .app_rd_data_valid      ( xv6_rd_data_valid         )
-                );
-
-`endif
-
-
 
 // -------------------------------------------------------------
 // Instantiate Wishbone Arbiter
@@ -883,7 +632,7 @@ u_wishbone_arbiter (
     .i_s7_wb_err            ( s_wb_err   [7]    )
     );
 
-
+`ifdef ETHERNET
 ethmac_wb #(
     .WB_DWIDTH              ( WB_DWIDTH         ),
     .WB_SWIDTH              ( WB_SWIDTH         )
@@ -933,9 +682,18 @@ u_ethmac_wb (
     .i_s_wb_ack             ( ems_wb_ack        ),
     .i_s_wb_err             ( ems_wb_err        )
 );
+`else	 
+	assign m_wb_adr   [0] = 0;
+	assign m_wb_sel   [0] = 0;
+	assign m_wb_we    [0] = 0;
+	assign m_wb_dat_w [0] = 0;
+	assign m_wb_cyc   [0] = 0;
+	assign m_wb_stb   [0] = 0;
 
-
-
+	assign s_wb_ack   [0] = 0;
+	assign s_wb_dat_r [0] = 0;
+	assign s_wb_err   [0] = 0;	 
+`endif
 
 endmodule
 

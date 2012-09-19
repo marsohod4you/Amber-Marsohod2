@@ -46,6 +46,12 @@ set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_RO
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
+set_global_assignment -name VERILOG_MACRO "AMBER_A23_CORE=23"
+set_global_assignment -name VERILOG_MACRO "AMBER_CORE=AMBER_A23_CORE"
+
+set_parameter -name AMBER_A23_CORE 23
+set_parameter -name AMBER_CORE AMBER_A23_CORE
+set_parameter -name NOMEMORY 1
 
 set_location_assignment PIN_28 -to o_uart0_rx
 set_location_assignment PIN_24 -to i_uart0_tx
@@ -117,6 +123,62 @@ set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
+set_global_assignment -name SEARCH_PATH ../vlog/tb
+set_global_assignment -name SEARCH_PATH ../vlog/amber23
+set_global_assignment -name SEARCH_PATH ../vlog/system
 set_global_assignment -name VERILOG_FILE msystem.v
+set_global_assignment -name VERILOG_FILE ../vlog/sdram/sdr_ctrl/trunk/rtl/lib/sync_fifo.v
+set_global_assignment -name VERILOG_FILE ../vlog/sdram/sdr_ctrl/trunk/rtl/lib/async_fifo.v
+set_global_assignment -name VERILOG_FILE ../vlog/sdram/sdr_ctrl/trunk/rtl/wb2sdrc/wb2sdrc.v
+set_global_assignment -name VERILOG_FILE ../vlog/sdram/sdr_ctrl/trunk/rtl/top/sdrc_top.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/wishbone_arbiter.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_cache.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/memory_configuration.v
+set_global_assignment -name VERILOG_FILE ../vlog/lib/generic_sram_line_en.v
+set_global_assignment -name VERILOG_FILE ../vlog/lib/generic_sram_byte_en.v
+set_global_assignment -name VERILOG_FILE ../vlog/lib/generic_iobuf.v
+set_global_assignment -name VERILOG_FILE ../vlog/tb/global_defines.v
+set_global_assignment -name VERILOG_FILE ../vlog/tb/dumpvcd.v
+set_global_assignment -name VERILOG_FILE ../vlog/tb/debug_functions.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/uart.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/timer_module.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/test_module.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/system_functions.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/system_config_defines.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/register_addresses.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/interrupt_controller.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/ethmac_wb.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/ddr3_afifo.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/boot_mem128.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/boot_mem32.v
+set_global_assignment -name VERILOG_FILE ../vlog/system/afifo.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_wishbone.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_register_bank.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_multiply.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_localparams.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_functions.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_fetch.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_execute.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_decode.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_core.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_coprocessor.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_config_defines.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_barrel_shift.v
+set_global_assignment -name VERILOG_FILE ../vlog/amber23/a23_alu.v
+set_global_assignment -name VERILOG_FILE my_clocks_resets.v
 
+set_global_assignment -name VERILOG_FILE sram/my_sram_2048_32_byte_en.v
+set_global_assignment -name VERILOG_FILE sram/my_sram_512_128_byte_en.v
+set_global_assignment -name VERILOG_FILE sram/my_sram_256_128_byte_en.v
+set_global_assignment -name VERILOG_FILE sram/my_sram_256_21_line_en.v
+
+set_global_assignment -name QIP_FILE sram/sram_256_128_byte_en.qip
+set_global_assignment -name QIP_FILE sram/sram_256_21_line_en.qip
+set_global_assignment -name QIP_FILE sram/sram_512_128_byte_en.qip
+set_global_assignment -name QIP_FILE sram/sram_2048_32_byte_en.qip
+set_global_assignment -name QIP_FILE my_pll.qip
+
+
+set_global_assignment -name VERILOG_MACRO "MARSOHOD2=1"
+set_global_assignment -name VERILOG_MACRO "NOMEMORY=1"
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
