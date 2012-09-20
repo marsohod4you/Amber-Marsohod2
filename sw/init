@@ -1,0 +1,2 @@
+export AMBER_CROSSTOOL=arm-none-linux-gnueabi
+export PATH=$PATH:/home/nick/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_GNU_Linux/bin
