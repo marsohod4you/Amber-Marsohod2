@@ -1,12 +1,13 @@
 # ----------------------------------------------------------------
 #                                                               //
-#   Makefile for the sw tools.                                  //
+#   Makefile for the hello-world application.                   //
 #                                                               //
 #   This file is part of the Amber project                      //
 #   http://www.opencores.org/project,amber                      //
 #                                                               //
 #   Description                                                 //
-#   Simple makefile                                             //
+#   Simple makefile that defines the sources and target.        //
+#   Uses the common.mk common makefile script.                  //
 #                                                               //
 #   Author(s):                                                  //
 #       - Conor Santifort, csantifort.amber@gmail.com           //
@@ -39,19 +40,11 @@
 # ----------------------------------------------------------------
 # Assembly source files
 
-CC = gcc
+SRC = hello-world.c start.S
+TGT = hello-world.elf
+LDS = sections.lds
 
-all : amber-elfsplitter amber-func-jumps amber-bin2mem amber-mem-ascii amber-ascii-mem mem2mif
+USE_MINI_LIBC = 1
+CREATE_FLT_OUTPUT = 1
 
-mem2mif : mem2mif.c
-	$(CC) mem2mif.c -o mem2mif
-	
-amber-elfsplitter : amber-elfsplitter.c
-	$(CC) amber-elfsplitter.c -o amber-elfsplitter
-
-amber-func-jumps :  amber-func-jumps.c
-	$(CC)  amber-func-jumps.c -o amber-func-jumps
-
-clean:
-	@rm -rfv *.o amber-elfsplitter amber-func-jumps amber-bin2mem amber-mem-ascii mem2mif
-
+include ../include/common.mk
