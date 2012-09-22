@@ -48,7 +48,7 @@ ENTRY(main)
 
 SECTIONS {
 
-        . = 0x008000;
+        . = 0x000000;
                         
 	.text   : {  start*(.text); *(.text); }
         
