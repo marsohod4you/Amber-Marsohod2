@@ -46,7 +46,11 @@
 
 main () 
 {
-    printf ("Hello, World!\n");
+    int i;
+    printf ("\nMarsohod2: Hello, World!\n");
+    for(i=0; i<5; i++)
+	printf("* %d *\n",i);
+
     /* Flush out UART FIFO */
     printf ("                ");
     _testpass();
