@@ -1,0 +1,13 @@
+*.bak
+*.rpt
+*.summary
+*.pof
+*.sof
+*.vcd
+*.log
+*.done
+*.jdi
+*.pin
+db
+incremental_db
+
