@@ -225,7 +225,7 @@ assign o_wb_req        = (( read_miss || write_miss ) && c_state == CS_IDLE ) ||
 always @ ( posedge i_clk )
     if ( i_cache_flush )
         begin
-        c_state     <= C_INIT;
+        c_state     <= CS_INIT;
         source_sel  <= 1'd1 << C_INIT;
         init_count  <= 'd0;
         `ifdef A23_CACHE_DEBUG  
