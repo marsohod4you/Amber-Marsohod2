@@ -72,7 +72,7 @@ output                      phy_reset_n,
 output  led
 );
 
-wire brb_rst; assign brd_rst = ~brd_n_rst;
+wire brd_rst; assign brd_rst = ~brd_n_rst;
 assign led = brd_rst;
 
 wire            phy_init_done;
@@ -335,9 +335,9 @@ u_uart0 (
 
     .o_uart_int             ( uart0_int      ),
     
-    .i_uart_cts_n           ( 1'b0 ), 	//i_uart0_rts    ),
+    .i_uart_cts_n           ( 1'b0 ), //i_uart0_rts    ),
     .o_uart_txd             ( o_uart0_rx     ),
-    .o_uart_rts_n           ( ),			//o_uart0_cts    ),
+    .o_uart_rts_n           ( o_uart0_cts    ),
     .i_uart_rxd             ( i_uart0_tx     ),
     
     .i_wb_adr               ( s_wb_adr  [3]  ),

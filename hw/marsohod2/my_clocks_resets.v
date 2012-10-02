@@ -8,7 +8,7 @@ module my_clocks_resets (
 	input	wire	i_brd_clk, //from board crystal
 	output wire	o_sys_rst,
 	output reg	o_sys_clk,
-	output wire	o_system_ready
+	output reg	o_system_ready
 );
 wire pll_clk;
 wire pll_locked;
@@ -26,15 +26,15 @@ wire pll_locked;
 	);
 `endif
 
-reg [15:0]cnt;
+reg [7:0]cnt;
 always @(posedge pll_clk or posedge i_brd_rst)
 	if(i_brd_rst)
 		cnt<=0;
 	else
-		if( (!cnt[15]) && pll_locked )
-			cnt <= cnt + 1;
+		if( (!cnt[7]) && pll_locked )
+			cnt <= cnt + 1'b1;
 		
-assign o_sys_rst = ~cnt[15];
+assign o_sys_rst = ~cnt[7];
 
 always @(posedge pll_clk or posedge i_brd_rst)
 	if(i_brd_rst)
@@ -42,7 +42,12 @@ always @(posedge pll_clk or posedge i_brd_rst)
 	else
 		o_sys_clk <= o_sys_clk+1'b1;
 
-assign o_system_ready = ~o_sys_rst;
+//one clock delay for system ready signal regarding reset
+initial
+	o_system_ready = 0;
+
+always @(posedge pll_clk)
+	o_system_ready <= ~o_sys_rst;
 
 endmodule
 

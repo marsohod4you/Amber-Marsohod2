@@ -157,7 +157,56 @@ localparam [4:0] RST_WAIT1      = 5'd0,
                  SWAP_WAIT2     = 5'd24,
                  COPRO_WAIT     = 5'd25;
                  
-                 
+//added for MARSOHOD2
+//do not know why Altera Quartus II does not accept initial reg values during declaration
+initial 
+begin
+	o_read_data = 1'd0;
+	o_read_data_alignment = 1'd0;
+
+	o_imm32 = 'd0;
+	o_imm_shift_amount = 'd0;
+	o_shift_imm_zero = 'd0;
+	o_condition = 4'he;
+	o_exclusive_exec = 'd0;
+	o_data_access_exec = 'd0;
+
+	o_status_bits_mode = 2'b11;
+	o_status_bits_irq_mask = 1'd1;
+	o_status_bits_firq_mask = 1'd1;
+
+	o_rm_sel = 'd0;
+	o_rds_sel = 'd0;
+	o_rn_sel = 'd0;
+	o_barrel_shift_amount_sel = 'd0;
+	o_barrel_shift_data_sel = 'd0;
+	o_barrel_shift_function = 'd0;
+	o_alu_function = 'd0;
+	o_multiply_function = 'd0;
+	o_interrupt_vector_sel = 'd0;
+	o_address_sel = 4'd2;
+	o_pc_sel = 2'd2;
+	o_byte_enable_sel = 'd0;
+	o_status_bits_sel = 'd0;
+	o_write_data_wen = 'd0;
+	o_base_address_wen = 'd0;
+
+	o_pc_wen = 1'd1;
+	o_reg_bank_wen = 'd0;
+	o_status_bits_flags_wen = 'd0;
+	o_status_bits_mode_wen = 'd0;
+	o_status_bits_irq_mask_wen = 'd0;
+	o_status_bits_firq_mask_wen = 'd0;
+
+	o_copro_opcode1 = 'd0;
+	o_copro_opcode2 = 'd0;
+	o_copro_crn = 'd0;
+	o_copro_crm = 'd0;
+	o_copro_num = 'd0;
+	o_copro_operation = 'd0;
+	o_copro_write_data_wen = 'd0;
+end
+
 // ========================================================
 // Internal signals
 // ========================================================
