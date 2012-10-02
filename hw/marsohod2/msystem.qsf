@@ -18,7 +18,7 @@
 #
 # Quartus II 32-bit
 # Version 11.1 Build 259 01/25/2012 Service Pack 2 SJ Web Edition
-# Date created = 17:39:16  September 26, 2012
+# Date created = 10:31:59  October 02, 2012
 #
 # -------------------------------------------------------------------------- #
 #
@@ -81,11 +81,15 @@ set_global_assignment -name VERILOG_FILE my_clocks_resets.v
 set_global_assignment -name VERILOG_FILE sram/my_sram_2048_32_byte_en.v
 set_global_assignment -name VERILOG_FILE sram/my_sram_256_128_byte_en.v
 set_global_assignment -name VERILOG_FILE sram/my_sram_256_21_line_en.v
+set_global_assignment -name VERILOG_FILE ../vlog/sdram/sdr_ctrl/trunk/rtl/lib/sync_fifo.v
+set_global_assignment -name VERILOG_FILE ../vlog/sdram/sdr_ctrl/trunk/rtl/lib/async_fifo.v
+set_global_assignment -name VERILOG_FILE ../vlog/sdram/sdr_ctrl/trunk/rtl/wb2sdrc/wb2sdrc.v
+set_global_assignment -name VERILOG_FILE ../vlog/sdram/sdr_ctrl/trunk/rtl/top/sdrc_top.v
 set_global_assignment -name QIP_FILE sram/sram_256_128_byte_en.qip
 set_global_assignment -name QIP_FILE sram/sram_256_21_line_en.qip
 set_global_assignment -name QIP_FILE sram/sram_2048_32_byte_en.qip
 set_global_assignment -name QIP_FILE my_pll.qip
-set_global_assignment -name SIGNALTAP_FILE ../vlog/amber23/stp1.stp
+set_global_assignment -name SIGNALTAP_FILE stp_sdr.stp
 
 # Pin & Location Assignments
 # ==========================
@@ -151,12 +155,14 @@ set_global_assignment -name VERILOG_MACRO "NOMEMORY=1"
 set_global_assignment -name SEARCH_PATH ../vlog/tb
 set_global_assignment -name SEARCH_PATH ../vlog/amber23
 set_global_assignment -name SEARCH_PATH ../vlog/system
+set_global_assignment -name SEARCH_PATH ../vlog/sdram/sdr_ctrl/trunk/rtl/core
 set_global_assignment -name ALLOW_POWER_UP_DONT_CARE OFF
 set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON
 set_global_assignment -name EXTRACT_VERILOG_STATE_MACHINES OFF
 set_global_assignment -name HDL_MESSAGE_LEVEL LEVEL3
 set_global_assignment -name OPTIMIZE_POWER_DURING_SYNTHESIS OFF
 set_global_assignment -name IGNORE_VERILOG_INITIAL_CONSTRUCTS OFF
+set_global_assignment -name VERILOG_MACRO "SDRAM=1"
 
 # Fitter Assignments
 # ==================
@@ -174,7 +180,7 @@ set_global_assignment -name RESERVE_ALL_UNUSED_PINS_NO_OUTPUT_GND "AS OUTPUT DRI
 # SignalTap II Assignments
 # ========================
 set_global_assignment -name ENABLE_SIGNALTAP OFF
-set_global_assignment -name USE_SIGNALTAP_FILE stp1.stp
+set_global_assignment -name USE_SIGNALTAP_FILE stp_sdr.stp
 
 # Parameter Assignments
 # =====================
@@ -194,15 +200,6 @@ set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
 
-# start AUTO_INSERT_SLD_NODE_ENTITY(auto_signaltap_0)
-# ---------------------------------------------------
-
-	# SignalTap II Assignments
-	# ========================
-
-# end AUTO_INSERT_SLD_NODE_ENTITY(auto_signaltap_0)
-# -------------------------------------------------
-
 # ---------------------
 # start ENTITY(msystem)
 
@@ -211,13 +208,14 @@ set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -
 
 		# Incremental Compilation Assignments
 		# ===================================
-		set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-		set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
-		set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 
 	# end DESIGN_PARTITION(Top)
 	# -------------------------
 
 # end ENTITY(msystem)
 # -------------------
+set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

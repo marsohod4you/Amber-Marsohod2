@@ -46,6 +46,18 @@ module msystem
 input                       brd_n_rst,
 input                       brd_clk_p,  
 
+`ifdef SDRAM
+	//SDRAM interface
+	output wire sdr_clk,
+	output wire sdr_ras_n,
+	output wire sdr_cas_n,
+	output wire sdr_we_n,
+	output wire [1:0]sdr_dqm,
+	output wire [1:0]sdr_ba,
+	output wire [11:0]sdr_addr,
+	inout [15:0]sdr_dq,
+`endif
+
 // UART 0 Interface
 input                       i_uart0_rts,
 output                      o_uart0_rx,
@@ -157,7 +169,9 @@ wire                        uart1_int;
 wire      [2:0]             timer_int;
 
 wire sys_clk;
+wire mem_clk;
 wire sys_rst;
+wire sdr_ena;
 
 // ======================================
 // Clocks and Resets Module
@@ -166,18 +180,24 @@ wire sys_rst;
 my_clocks_resets u_clk_r(
 	.i_brd_rst(brd_rst),		//from board button
 	.i_brd_clk(brd_clk_p),	//from board crystal
+	.i_memory_initialized(phy_init_done),
 	.o_sys_rst(sys_rst),		//main project reset made out of board button reset
 	.o_sys_clk(sys_clk),		//main system clock
-	.o_system_ready(system_rdy)
+	.o_mem_clk(mem_clk),
+	.o_system_ready(system_rdy),
+	.o_sdr_ena(sdr_ena)
 );
 `else
 `ifdef ICARUS
 my_clocks_resets u_clk_r(
 	.i_brd_rst(brd_rst),		//from board button
 	.i_brd_clk(brd_clk_p),	//from board crystal
+	.i_memory_initialized(phy_init_done),
 	.o_sys_rst(sys_rst),		//main project reset made out of board button reset
 	.o_sys_clk(sys_clk),		//main system clock
-	.o_system_ready(system_rdy)
+	.o_mem_clk(mem_clk),
+	.o_system_ready(system_rdy),
+	.o_sdr_ena(sdr_ena)
 );
 `else
 clocks_resets u_clocks_resets (
@@ -475,11 +495,68 @@ u_interrupt_controller (
 );
 
 `ifndef XILINX_FPGA
+
+`ifdef SDRAM
+	//system with SDRAM
+	assign s_wb_err[2] = 0;
+	wire sdr_init_done;
+	assign phy_init_done = sdr_init_done;
+	assign sdr_clk = mem_clk;
+	
+   sdrc_top #(.SDR_DW(16),.SDR_BW(2)) u_sdram(
+          .cfg_sdr_width      (2'b01              ), // 16 BIT SDRAM
+          .cfg_colbits        (2'b00              ), // 8 Bit Column Address
+
+	/* WISHBONE */
+          .wb_rst_i           (sys_rst),
+          .wb_clk_i           (sys_clk            ),
+
+          .wb_stb_i           (s_wb_stb[2]        ),
+          .wb_ack_o           (s_wb_ack[2]        ),
+          .wb_addr_i          (s_wb_adr[2]>>2     ),
+          .wb_we_i            (s_wb_we[2]         ),
+          .wb_dat_i           (s_wb_dat_w[2]      ),
+          .wb_sel_i           (s_wb_sel[2]        ),
+          .wb_dat_o           (s_wb_dat_r[2]      ),
+          .wb_cyc_i           (s_wb_cyc[2]        ),
+          .wb_cti_i           (0), 
+	
+	/* Interface to SDRAMs */
+          .sdram_clk          (sdr_clk			  ),
+          .sdram_resetn       (~sys_rst			  ),
+          .sdr_cs_n           ( /*sdr_cs_n*/      ),
+          .sdr_cke            ( /*sdr_cke*/       ),
+          .sdr_ras_n          (sdr_ras_n          ),
+          .sdr_cas_n          (sdr_cas_n          ),
+          .sdr_we_n           (sdr_we_n           ),
+          .sdr_dqm            (sdr_dqm       	  ),
+          .sdr_ba             (sdr_ba             ),
+          .sdr_addr           (sdr_addr           ), 
+          .sdr_dq             (sdr_dq             ),
+
+	/* Parameters */
+          .sdr_init_done      (sdr_init_done      ),
+          .cfg_req_depth      (2'h3               ), //how many req. buffer should hold
+          .cfg_sdr_en         (sdr_ena            ),
+          .cfg_sdr_mode_reg   (12'h023            ),
+          .cfg_sdr_tras_d     (4'h4               ), //44-120000ns
+          .cfg_sdr_trp_d      (4'h2               ), //min 20ns
+          .cfg_sdr_trcd_d     (4'h2               ), //min 20ns
+          .cfg_sdr_cas        (3'h3               ), //cas latency in clocks, depends on mode reg
+          .cfg_sdr_trcar_d    (4'h7               ), //min 66ns
+          .cfg_sdr_twr_d      (4'h1               ), //write recovery time, 1ck+7,5/15ns
+          .cfg_sdr_rfsh       (12'h100            ), //16 or 64 ms?
+          .cfg_sdr_rfmax      (3'h6               )
+);
+`else
+//assume memory always ready if no SDRAM
+assign phy_init_done = 1'd1;
+`endif
+
     // ======================================
     // Instantiate non-synthesizable main memory model
     // ======================================
     
-    assign phy_init_done = 1'd1;
 `ifdef NOMEMORY
 `else
     main_mem #(
