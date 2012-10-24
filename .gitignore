@@ -8,6 +8,12 @@
 *.done
 *.jdi
 *.pin
+*.o
+*.mif
+*.mem
+*.dis
+*.map
+*.elf
 db
 incremental_db
 
