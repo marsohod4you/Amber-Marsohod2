@@ -44,9 +44,9 @@
 
 #define LINUX_JUMP_ADR  0x00080000 /* Boot loader jumps to this address to run vmlinux */
 #define APP_JUMP_ADR    0x00008000 /* Boot loader jumps to this address to run test programs */
-#define FILE_LOAD_BASE  0x00100000 /* 1Mb addr, was: 0x01000000 */
+#define FILE_LOAD_BASE  0x00400000 /* 1Mb addr, was: 0x01000000 */
 #define DEBUG_BUF       0x00200000 /* 2Mb addr, was: 0x01800000 */
-#define FILE_MAX_SIZE   0x00100000 /* 1Mb max size, was: 0x00800000 */ /* 8MB max Xmodem transfer file size        */
+#define FILE_MAX_SIZE   0x00200000 /* 1Mb max size, was: 0x00800000 */ /* 8MB max Xmodem transfer file size        */
 
 /* Function prototypes */
 void parse ( char * buf );
