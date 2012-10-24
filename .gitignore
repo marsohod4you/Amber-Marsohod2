@@ -10,7 +10,6 @@
 *.pin
 *.o
 *.mif
-*.mem
 *.dis
 *.map
 *.elf
