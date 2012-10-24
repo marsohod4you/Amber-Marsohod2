@@ -105,11 +105,6 @@ startup:
         mov     r1, #1
         str     r1, [r0]
 
-	mov	r4,#4
-	mov	r5,#5
-	mov	r6,#6
-	mov	r7,#7
-
         .extern main
         bl      main
 
@@ -201,18 +196,21 @@ ATAGBase:                   .word ATAG_CORE_SIZE
 
                             .word ATAG_MEM_SIZE
                             .word ATAG_MEM
-                            .word 32*1024*1024      @ size - 32MB
+/*                          .word 32*1024*1024      @ size - 32MB */
+                            .word 8*1024*1024       @ size - 8MB
                             .word 0x0               @ start
 
                             .word ATAG_RAMDISK_SIZE
                             .word ATAG_RAMDISK
                             .word 1                 @ flags: bit 0 = load, bit 1 = prompt
                             .word 0x000000d0        @ size in 1k blocks
-                            .word 0x00800000        @ physical address of start of ramdisk
+/*                          .word 0x00800000        @ physical address of start of ramdisk */
+                            .word 0x00700000        @ physical address of start of ramdisk
 
                             .word ATAG_INITRD_SIZE
                             .word ATAG_INITRD
-                            .word 0x02800000        @ virtual address of start of initrd image
+/*                          .word 0x02800000        @ virtual address of start of initrd image */
+                            .word 0x02700000        @ virtual address of start of initrd image
                             .word 0x00032000        @ size = 200k
 
                             .word ATAG_NONE
