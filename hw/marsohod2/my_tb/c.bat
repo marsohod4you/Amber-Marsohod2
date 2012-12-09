@@ -1,1 +1,0 @@
-iverilog -o qqq -g2005 -DICARUS=1 -DAMBER_A23_CORE=1 -DNOMEMORY=1 -csrclist -I../../vlog/system/ -I../../vlog/amber23/ -I../../vlog/tb/
