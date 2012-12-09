@@ -229,7 +229,9 @@ int main(int argc,char *argv[])
    int infile_size;
    int boffset;
    int max_out = 0;
-   
+    unsigned char sbuf[4];
+    unsigned int sadr;
+
    if (argc<2){
       printf("%s ERROR: no input file specified. Quitting\n", argv[0]);
       exit(1);
@@ -320,16 +322,17 @@ int main(int argc,char *argv[])
               elfSection->sh_addr, 
               elfSection->sh_offset,
               boffset);
-           }     
-        
+           }
 
         /* section with non-zero bits, can be either text or data */
         if (elfSection->sh_type == SHT_PROGBITS && elfSection->sh_size != 0) {
             for (j=0; j<elfSection->sh_size; j++) {
                k = j + elfSection->sh_offset;
                outP = elfSection->sh_addr + j;
-               outbuf[outP] = inbuf[k];
-               if (outP > max_out) max_out = outP;
+               if((outP&3)==0)
+		    printf("@%08x %02x%02x%02x%02x\n", outP, inbuf[k+3], inbuf[k+2], inbuf[k+1], inbuf[k+0]);
+               //outbuf[outP] = inbuf[k];
+               //if (outP > max_out) max_out = outP;
                }
            }
            
@@ -338,17 +341,19 @@ int main(int argc,char *argv[])
             printf("// .bss Dump Zeros\n");
             for (j=0; j<elfSection->sh_size; j++) {
                outP = j + elfSection->sh_addr;
-               outbuf[outP] = 0;
-               if (outP > max_out) max_out = outP;
+               if((outP&3)==0)
+		    printf("@%08x 00000000\n",outP);
+               //outbuf[outP] = 0;
+               //if (outP > max_out) max_out = outP;
                }
            }
    }
 
-   
+/*
    for(j=0;j<max_out+3;j=j+4) {
         printf("@%08x %02x%02x%02x%02x\n", j, outbuf[j+3], outbuf[j+2], outbuf[j+1], outbuf[j+0]);
         }
-        
+*/
    free(inbuf);
    free(outbuf);
 
