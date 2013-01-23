@@ -1,0 +1,2 @@
+export AMBER_CROSSTOOL=arm-uclinuxeabi
+export PATH=$PATH:/home/nick/CodeSourcery/Sourcery_G++_Lite/bin
