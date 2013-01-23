@@ -74,7 +74,6 @@ while the segments are intended to be mapped into memory.
 #define	SHT_SYMTAB_SHNDX	18
 #define	SHT_NUM			19
 
-
 /* Main ELF Header Table */
 typedef struct {
    unsigned char  e_ident[EI_NIDENT]; /* bytes 0 to 15  */
@@ -151,8 +150,6 @@ DYNAMIC and HASH: This holds information related to dynamic linking.
 #define	SHT_GROUP		17
 #define	SHT_SYMTAB_SHNDX	18
 #define	SHT_NUM			19
-
-
 
 char SHT_NAME[80];
 
@@ -245,7 +242,7 @@ int elfsplitter (unsigned int base, unsigned int size)
 
    /* Find the location in the file of the string section
       containing the section names
-   */   
+   */
    for(i=0;i<elfHeader->e_shnum;++i) {
       elfSection=(Elf32_Shdr*)(buf+elfHeader->e_shoff+elfHeader->e_shentsize*i);
       if (elfSection->sh_type == SHT_STRTAB && !StringSectionOffsetFound) { 
@@ -265,40 +262,39 @@ int elfsplitter (unsigned int base, unsigned int size)
               elfSection->sh_size, 
               elfSection->sh_addr, 
               elfSection->sh_offset);
-           }     
+           }
 #endif
 
         /* section with non-zero bits, can be either text or data */
-        if (elfSection->sh_type == SHT_PROGBITS && elfSection->sh_size != 0) {
+        if (elfSection->sh_type == SHT_PROGBITS && elfSection->sh_size != 0 && elfSection->sh_addr != 0 ) {
             for (j=0; j<elfSection->sh_size; j=j+4) {
                k = j + elfSection->sh_offset;
                *(unsigned int*)(elfSection->sh_addr + j)  = 
                     (buf[k+3] << 24) | (buf[k+2] << 16) | (buf[k+1] << 8) | (buf[k+0]);
 #ifdef _PRINT_IT
-               if (j%0x1000 == 0) {     
-                     printf("@%08x %02x%02x%02x%02x\n", 
+               //if (j%0x1000 == 0) 
+            	    {
+                     printf("%08x %02x%02x%02x%02x\n",
                       (elfSection->sh_addr + j),        /* use word addresses */
                       buf[k+3], buf[k+2], buf[k+1], buf[k+0]);
                     }
 #endif
                }
            }
-           
-        if (elfSection->sh_type == SHT_NOBITS && elfSection->sh_size != 0) {
+
+        if (elfSection->sh_type == SHT_NOBITS && elfSection->sh_size != 0 && elfSection->sh_addr != 0 ) {
 #ifdef _PRINT_IT
             printf("// .bss Dump Zeros\n");
 #endif
             for (j=elfSection->sh_offset; j<elfSection->sh_offset+elfSection->sh_size; j=j+4) {
                *(unsigned int*) (j + elfSection->sh_addr - elfSection->sh_offset) = 0;
 #ifdef _PRINT_IT
-               printf("@%08x 00000000\n", 
+               printf("%08x 0\n",
                (j + elfSection->sh_addr - elfSection->sh_offset)); /* use word addresses */
 #endif
                }
            }
-
-
    }
-   
+
    return 0;
 }
