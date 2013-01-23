@@ -205,13 +205,13 @@ ATAGBase:                   .word ATAG_CORE_SIZE
                             .word 1                 @ flags: bit 0 = load, bit 1 = prompt
                             .word 0x000000d0        @ size in 1k blocks
 /*                          .word 0x00800000        @ physical address of start of ramdisk */
-                            .word 0x00700000        @ physical address of start of ramdisk
+                            .word 0x1e00            @ 1k block address of ramdisk
 
                             .word ATAG_INITRD_SIZE
                             .word ATAG_INITRD
 /*                          .word 0x02800000        @ virtual address of start of initrd image */
                             .word 0x02700000        @ virtual address of start of initrd image
-                            .word 0x00032000        @ size = 200k
+                            .word 0x00034000        @ size = 200k
 
                             .word ATAG_NONE
                             .word 0x0
