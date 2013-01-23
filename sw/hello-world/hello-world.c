@@ -41,14 +41,15 @@
 /* Note that the stdio.h referred to here is the one in
    mini-libc. This applications compiles in mini-libc
    so it can run stand-alone.
-*/   
+*/
 #include "stdio.h"
 
-main () 
+main ()
 {
     printf ("Hello, World!\n");
+    printf ("Hello, Marsohod!\n");
     /* Flush out UART FIFO */
-    printf ("                ");
+    printf ("\n\n\n\n\n");
     _testpass();
 }
 
