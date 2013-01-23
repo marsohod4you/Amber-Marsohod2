@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Set the location on your system where the Amber project is located
+export AMBER_BASE=$PWD/../../
+
+# Pick a directory on your system where you want to build Linux
+export LINUX_WORK_DIR=$PWD/disk
+
+
+# Create the Linux build directory
+test -e ${LINUX_WORK_DIR} || mkdir ${LINUX_WORK_DIR}
+cd ${LINUX_WORK_DIR}
+
+# Need root permissions to mount disks
+sudo dd if=/dev/zero of=initrd bs=200k count=1
+sudo mke2fs -F -m0 -b 1024 initrd
+
+mkdir mnt
+sudo mount -t ext2 -o loop initrd ${LINUX_WORK_DIR}/mnt
+
+# Add files
+sudo mkdir ${LINUX_WORK_DIR}/mnt/sbin
+sudo mkdir ${LINUX_WORK_DIR}/mnt/dev
+sudo mkdir ${LINUX_WORK_DIR}/mnt/bin
+sudo mkdir ${LINUX_WORK_DIR}/mnt/etc
+sudo mkdir ${LINUX_WORK_DIR}/mnt/proc
+sudo mkdir ${LINUX_WORK_DIR}/mnt/lib
+
+sudo mknod ${LINUX_WORK_DIR}/mnt/dev/console c 5 1
+sudo mknod ${LINUX_WORK_DIR}/mnt/dev/tty2 c 4 2
+sudo mknod ${LINUX_WORK_DIR}/mnt/dev/null c 1 3
+sudo mknod ${LINUX_WORK_DIR}/mnt/dev/loop0 b 7 0
+sudo chmod 600 ${LINUX_WORK_DIR}/mnt/dev/*
+
+sudo cp ${AMBER_BASE}/sw/hello-world/hello-world.flt ${LINUX_WORK_DIR}/mnt/sbin/init
+#sudo cp $AMBER_BASE/sw/dhry/dhry.flt ${LINUX_WORK_DIR}/mnt/sbin/init
+sudo chmod +x ${LINUX_WORK_DIR}/mnt/sbin/init
+
+ls ${LINUX_WORK_DIR}/mnt/sbin/ -l
+
+# Check
+df ${LINUX_WORK_DIR}/mnt
+
+# Unmount
+sudo umount ${LINUX_WORK_DIR}/mnt
+sudo rm -rf ${LINUX_WORK_DIR}/mnt
+
+#cp initrd $AMBER_BASE/sw/vmlinux/initrd-<my name>
