@@ -10,6 +10,7 @@ module my_clocks_resets (
 	output wire	o_sys_rst,
 	output wire	o_sys_clk,
 	output wire	o_mem_clk,
+	output wire	o_vga_clk,
 	output wire o_sdr_ena,
 	output reg	o_system_ready
 );
@@ -33,6 +34,7 @@ wire pll_locked;
 	.areset(1'b0 /*i_brd_rst*/ ),
 	.c0(o_sys_clk), //40Mhz
 	.c1(o_mem_clk), //80Mhz
+	.c2(o_vga_clk), //106,5Mhz VGA
 	.locked(pll_locked)
 	);
 `endif
