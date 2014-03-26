@@ -69,8 +69,11 @@
 // UART Baud rate for both uarts
 // e.g. 921600, 460800, 230400, 57600
 // `define AMBER_UART_BAUD 921600
+`ifdef ENABLE_TXTSCR
+`define AMBER_UART_BAUD 115200
+`else
 `define AMBER_UART_BAUD 921600
-
+`endif
 
 // --------------------------------------------------------------------
 // Debug switches 
