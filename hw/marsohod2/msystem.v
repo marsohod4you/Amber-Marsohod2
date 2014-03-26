@@ -31,7 +31,7 @@
 // This source is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the implied   //
 // warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      //
-// PURPOSE.  See the GNU Lesser General Public License for more //
+// PURPOSE.  See the GNU esser General Public License for more //
 // details.                                                     //
 //                                                              //
 // You should have received a copy of the GNU Lesser General    //
@@ -79,6 +79,16 @@ input                       mcrs_pad_i,
 inout                       md_pad_io,
 output                      mdc_pad_o,    
 output                      phy_reset_n,
+`endif
+
+`ifdef ENABLE_TXTSCR
+	output wire [4:0]VGA_RED,
+	output wire [5:0]VGA_GREEN,
+	output wire [4:0]VGA_BLUE,
+	output wire VGA_HSYNC,
+	output wire VGA_VSYNC,
+	input wire io_ps2_clock,
+	input wire io_ps2_data,
 `endif
 
 output  led
@@ -177,6 +187,7 @@ wire sdr_ena;
 // Clocks and Resets Module
 // ======================================
 `ifdef MARSOHOD2
+wire vga_clock;
 my_clocks_resets u_clk_r(
 	.i_brd_rst(brd_rst),		//from board button
 	.i_brd_clk(brd_clk_p),	//from board crystal
@@ -184,6 +195,7 @@ my_clocks_resets u_clk_r(
 	.o_sys_rst(sys_rst),		//main project reset made out of board button reset
 	.o_sys_clk(sys_clk),		//main system clock
 	.o_mem_clk(mem_clk),
+	.o_vga_clk(vga_clock),
 	.o_system_ready(system_rdy),
 	.o_sdr_ena(sdr_ena)
 );
@@ -402,10 +414,40 @@ u_uart1 (
     .o_wb_err               ( s_wb_err  [4]  )
 );
 `else
+
+`ifdef ENABLE_TXTSCR
+txtscreen u_txtscreen (
+   .pixel_clock( vga_clock ),
+	.in_ps2_clock( io_ps2_clock ),
+	.in_ps2_data( io_ps2_data ),
+	.hsync( VGA_HSYNC ),
+	.vsync( VGA_VSYNC),
+
+	//high-color test video signal
+	.r( VGA_RED ),
+	.g( VGA_GREEN ),
+	.b( VGA_BLUE ),
+	
+	.i_wb_clk               ( sys_clk  ),
+	.i_wb_adr               ( s_wb_adr  [4]  ),
+	.i_wb_sel               ( s_wb_sel  [4]  ),
+	.i_wb_we                ( s_wb_we   [4]  ),
+	.o_wb_dat               ( s_wb_dat_r[4]  ),
+	.i_wb_dat               ( s_wb_dat_w[4]  ),
+	.i_wb_cyc               ( s_wb_cyc  [4]  ),
+	.i_wb_stb               ( s_wb_stb  [4]  ),
+	.o_wb_ack               ( s_wb_ack  [4]  ),
+	.o_wb_err               ( s_wb_err  [4]  )
+);
+    assign uart1_int = 0;
+
+`else
     assign uart1_int = 0;
     assign s_wb_dat_r[4] = 0;
     assign s_wb_ack  [4] = 0;
     assign s_wb_err  [4] = 0;
+`endif
+
 `endif
 
 // -------------------------------------------------------------
